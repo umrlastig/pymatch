@@ -1,0 +1,47 @@
+/// Input
+val decallage = Val[Double]
+val bruiteur = Val[Double]
+val echelle = Val[Double]
+val spliteur = Val[Double]
+val suppression = Val[Double]
+val training = Val[File]
+
+/// Output
+val diff = Val[Double]
+
+// python task
+val pythonTask = PythonTask(
+  workDirectory / "model.py",
+  libraries = Seq("numpy","pandas","shapely")
+  ) set (
+    inputs += (training mapped "popComp.csv") ,
+    inputs += decallage.mapped,
+    inputs += decallage.mapped,
+    inputs += bruiteur.mapped,
+    inputs += echelle.mapped,
+    inputs += spliteur.mapped,
+    inputs += suppression.mapped,
+    
+    outputs += diff mapped "diff",
+    
+    training :=  workDirectory / "popComp.csv",
+    decallage:=0 ,
+    suppression:=0,
+    bruiteur := 0,
+    echelle := 0,
+    spliteur := 0,
+    suppression := 0
+    
+  )
+
+
+val mysamplingTask  = DirectSampling(
+  evaluation = pythonTask,
+  sampling = 
+    (decallage in (0.0 to 0.4 by 0.2)) x 
+    (suppression in (0.0 to 0.4 by 0.2)) x
+    (bruiteur in (0.0 to 1.0 by 0.5)) x 
+    (echelle in (0.0 to 1.0 by 0.5)) x 
+    (spliteur in (0.0 to 1.0 by 0.5))  
+) hook (workDirectory / "replications_results.csv") //hook copy on env
+mysamplingTask
