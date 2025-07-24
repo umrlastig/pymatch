@@ -1,0 +1,72 @@
+/// Input
+val decallage = Val[Double]
+val bruiteur = Val[Double]
+val echelle = Val[Double]
+val spliteur = Val[Double]
+val suppression = Val[Double]
+val training = Val[File]
+
+/// Output
+val diff1 = Val[Double]
+val diff2 = Val[Double]
+val diff3 = Val[Double]
+val diff = Val[Double]
+
+// python task
+val pythonTask = PythonTask(
+  workDirectory / "model.py",
+  libraries = Seq("numpy","pandas","shapely")
+  ) set (
+    inputs += (training mapped "popRef.csv") ,
+    inputs += decallage.mapped,
+    inputs += decallage.mapped,
+    inputs += bruiteur.mapped,
+    inputs += echelle.mapped,
+    inputs += spliteur.mapped,
+    inputs += suppression.mapped,
+    
+    outputs += diff1 mapped "diff1",
+    outputs += diff2 mapped "diff2",
+    outputs += diff3 mapped "diff3",
+    outputs += diff mapped "diff",
+    
+    training :=  workDirectory / "popRef.csv",
+    decallage:=0.1 ,
+    suppression:=0.1,
+    bruiteur := 0.1,
+    echelle := 0.1,
+    spliteur := 0.1,
+    suppression := 0.07
+    
+  )
+
+
+//val mysamplingTask  = DirectSampling(
+//  evaluation = pythonTask,
+//  sampling = 
+//    decallage in (0.0 to 0.4 by 0.1)
+//) hook (workDirectory / "replications_results.csv") //hook copy on env
+
+
+
+//val mysamplingTask  = NSGA2Evolution(
+//  evaluation = pythonTask ,
+//  objective = diff ,
+  //populationSize = 200,
+//  genome = Seq(
+//    decallage in (0.0, 1.0)),
+//  termination = 100,
+//  parallelism = 1
+//) hook (workDirectory / "replications_results.csv")
+
+val mysamplingTask  = SensitivitySaltelli(
+  evaluation = pythonTask,
+  inputs = Seq(
+    bruiteur in (0.0, 1.0),
+    echelle in (0.0, 1.0),
+    spliteur in (0.0, 1.0)),
+  outputs = Seq(diff1, diff2 , diff3),
+  sample = 10
+) hook (workDirectory / "replications_results.csv")
+
+mysamplingTask
